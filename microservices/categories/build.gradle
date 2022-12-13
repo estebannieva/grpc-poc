@@ -1,0 +1,61 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '2.7.6'
+	id 'io.spring.dependency-management' version '1.0.15.RELEASE'
+	id 'idea'
+	id 'com.google.protobuf' version '0.9.1'
+}
+
+group = 'dev.estebannieva'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+protobuf {
+	protoc {
+		artifact = "com.google.protobuf:protoc:3.21.7"
+	}
+	plugins {
+		grpc {
+			artifact = 'io.grpc:protoc-gen-grpc-java:1.51.0'
+		}
+	}
+	generateProtoTasks {
+		all()*.plugins {
+			grpc {}
+		}
+	}
+}
+
+sourceSets.main.java.srcDir new File(buildDir, 'generated/source')
+
+dependencies {
+	runtimeOnly 'io.grpc:grpc-netty-shaded:1.51.0'
+	implementation 'io.grpc:grpc-protobuf:1.51.0'
+	implementation 'io.grpc:grpc-stub:1.51.0'
+	implementation 'io.grpc:grpc-services:1.51.0'
+	compileOnly 'org.apache.tomcat:annotations-api:6.0.53' // necessary for Java 9+
+
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	compileOnly 'org.projectlombok:lombok'
+	runtimeOnly 'org.postgresql:postgresql'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+	implementation 'org.mapstruct:mapstruct:1.5.3.Final'
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.3.Final'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}

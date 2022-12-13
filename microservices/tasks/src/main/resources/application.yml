@@ -1,0 +1,12 @@
+server:
+  port: ${SERVER_PORT:8081}
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: update
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:db_task}
+    username: ${POSTGRES_USER:pg}
+    password: ${POSTGRES_PASSWORD:secret}
+# Custom properties
+grpc-port: ${GRPC_PORT:50051}

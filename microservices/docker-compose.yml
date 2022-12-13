@@ -1,0 +1,159 @@
+version: '3.9'
+
+networks:
+  todolist:
+    driver: bridge
+
+services:
+  postgres:
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    image: postgres:latest
+    networks:
+      - todolist
+    ports:
+      - "5432:5432"
+    restart: always
+    volumes:
+      - ../postgres:/var/lib/postgresql/data
+      - ./init-dbs.sql:/docker-entrypoint-initdb.d/init-dbs.sql
+
+  pgadmin:
+    depends_on:
+      - postgres
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD}
+    image: dpage/pgadmin4:latest
+    networks:
+      - todolist
+    ports:
+      - "80:80"
+    restart: always
+    volumes:
+      - ../pgadmin:/var/lib/pgadmin
+
+  categories:
+    build:
+      context: .
+      dockerfile: categories.Dockerfile
+    depends_on:
+      - postgres
+      - tasks
+    environment:
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - GRPC_PORT=${GRPC_CATEGORIES_PORT}
+      - GRPC_TASKS_HOST=${GRPC_TASKS_HOST}
+      - GRPC_TASKS_PORT=${GRPC_TASKS_PORT}
+    networks:
+      - todolist
+    ports:
+      - "8080:8080"
+      - "50050:50050"
+    restart: always
+
+  categories-grpc:
+    build:
+      context: .
+      dockerfile: categories-grpc.Dockerfile
+    depends_on:
+      - categories
+    networks:
+      - todolist
+    ports:
+      - "9090:9090"
+    restart: always
+
+  tasks:
+    build:
+      context: .
+      dockerfile: tasks.Dockerfile
+    depends_on:
+      - postgres
+    environment:
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - GRPC_PORT=${GRPC_TASKS_PORT}
+    networks:
+      - todolist
+    ports:
+      - "8081:8081"
+      - "50051:50051"
+    restart: always
+
+  tasks-grpc:
+    build:
+      context: .
+      dockerfile: tasks-grpc.Dockerfile
+    depends_on:
+      - tasks
+    networks:
+      - todolist
+    ports:
+      - "9091:9091"
+    restart: always
+
+  react:
+    build:
+      context: ../front-end
+      dockerfile: react.Dockerfile
+    depends_on:
+      - tasks-grpc
+      - categories-grpc
+    networks:
+      - todolist
+    ports:
+      - "3000:3000"
+    restart: always
+
+  influxdb:
+    environment:
+      - INFLUXDB_DB=k6
+    image: influxdb:1.8
+    networks:
+      - todolist
+    ports:
+      - "8086:8086"
+    restart: always
+
+  grafana:
+    depends_on:
+      - influxdb
+    environment:
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_BASIC_ENABLED=false
+    image: grafana/grafana:latest
+    networks:
+      - todolist
+    ports:
+      - "3000:3000"
+    restart: always
+    volumes:
+      - ../grafana:/etc/grafana/provisioning/
+
+  k6:
+    environment:
+      - K6_OUT=influxdb=http://${LOCAL_IP}:8086/k6
+    image: grafana/k6:latest
+    networks:
+      - todolist
+    ports:
+      - "6565:6565"
+    volumes:
+      - ../k6:/k6
+
+  ghz:
+    build:
+      context: .
+      dockerfile: ghz.Dockerfile
+    networks:
+      - todolist
+    restart: always
+    volumes:
+      - ./tasks/src/main/proto/tasks:/ghz

@@ -1,0 +1,40 @@
+syntax = 'proto3';
+
+package tasks;
+
+option java_package = 'dev.estebannieva.tasks.proto';
+option java_multiple_files = true;
+
+import 'google/protobuf/empty.proto';
+
+message Task {
+  optional string id = 1;
+  string name = 2;
+  string category_id = 3;
+}
+
+message TaskId {
+  string id = 1;
+}
+
+message Category {
+  string id = 1;
+  optional int32 page = 2;
+  optional int32 size = 3;
+}
+
+message CategoryId {
+  string id = 1;
+}
+
+message TaskCount {
+  int64 count = 1;
+}
+
+service TaskService {
+  rpc createTask(Task) returns (TaskId);
+  rpc updateTask(Task) returns (google.protobuf.Empty);
+  rpc deleteTask(TaskId) returns (google.protobuf.Empty);
+  rpc listTasks(Category) returns (stream Task);
+  rpc countTasks(CategoryId) returns (TaskCount);
+}

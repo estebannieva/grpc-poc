@@ -1,0 +1,12 @@
+### IntelliJ IDEA ###
+.idea/
+
+### Gradle ###
+.gradle/
+
+### Docker Compose ###
+postgres/
+pgadmin/
+
+### macOS ###
+.DS_Store

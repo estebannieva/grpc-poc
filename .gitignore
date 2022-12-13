@@ -1,0 +1,11 @@
+### IntelliJ IDEA ###
+.idea/
+
+### PostgreSQL ###
+postgres/
+
+### pgAdmin ###
+pgadmin/
+
+### macOS ###
+.DS_Store
